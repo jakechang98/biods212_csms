@@ -2,6 +2,7 @@ library(dplyr)
 library(ggplot2)
 library(scater)
 library(tibble)
+library(umap)
 
 multi_dimensional_k_means <- function() {
     single_cell_data <- readRDS("data/sce.rds")
@@ -49,9 +50,9 @@ multi_dimensional_k_means <- function() {
                      y = "within-cluster sum of squares (wss)") +
                 theme_minimal()
             
-            ggsave(sprintf("k_means_clustering_elbow_%s.pdf", unique(grouped_data$single_cell_data.Cell_type)))
+            ggsave(sprintf("figures/k_means_clustering_elbow_%s.pdf", unique(grouped_data$single_cell_data.Cell_type)))
         }
-            
+        
         if (unique(grouped_data$single_cell_data.Cell_type) == "B cells") {
             k_means_result <- kmeans(grouped_data$CytoTRACE2_Score, centers = 2)
             
@@ -68,10 +69,42 @@ multi_dimensional_k_means <- function() {
             k_means_result <- kmeans(grouped_data$CytoTRACE2_Score, centers = 1)
         }
         
-        x <- data.frame(barcode = grouped_data$X, phenotype = grouped_data$single_cell_data.Cell_type,
-                        value = grouped_data$CytoTRACE2_Score, cluster = factor(k_means_result$cluster))
+        phenotype_clusters <- data.frame(barcode = grouped_data$X, phenotype = grouped_data$single_cell_data.Cell_type,
+                                         value = grouped_data$CytoTRACE2_Score, cluster = factor(k_means_result$cluster))
         
-        cluster_data <- rbind(cluster_data, x)
+        cluster_data <- rbind(cluster_data, phenotype_clusters)
+        
+        if (unique(grouped_data$single_cell_data.Cell_type) != "Mast cells") {
+            umap_result <- umap(grouped_data %>% select("CytoTRACE2_Score", starts_with("PC")))
+            umap_result <- as.data.frame(umap_result$layout)
+            
+            colnames(umap_result) <- c("UMAP1", "UMAP2")
+            umap_result$cluster <- phenotype_clusters$cluster
+            umap_result$score <- phenotype_clusters$value
+            
+            ggplot(umap_result, aes(x = UMAP1, y = UMAP2, color = cluster)) +
+                geom_point(size = 2) +
+                theme_minimal() +
+                labs(title = sprintf("%s", unique(grouped_data$single_cell_data.Cell_type)),
+                     x = "UMAP1",
+                     y = "UMAP2",
+                     color = "cluster") +
+                theme(plot.title = element_text(hjust = 0.5))
+            
+            ggsave(sprintf("figures/umap_cluster_%s.pdf", unique(grouped_data$single_cell_data.Cell_type)))
+            
+            ggplot(umap_result, aes(x = UMAP1, y = UMAP2, color = score)) +
+                geom_point(size = 2) +
+                scale_color_gradient(low = "blue", high = "red") +
+                theme_minimal() +
+                labs(title = sprintf("%s", unique(grouped_data$single_cell_data.Cell_type)),
+                     x = "UMAP1",
+                     y = "UMAP2",
+                     color = "score") +
+                theme(plot.title = element_text(hjust = 0.5))
+            
+            ggsave(sprintf("figures/umap_score_%s.pdf", unique(grouped_data$single_cell_data.Cell_type)))
+        }
     }
     
     write.csv(cluster_data, file = "cluster_data.csv", row.names = FALSE)
@@ -126,7 +159,7 @@ one_dimensional_k_means <- function() {
                   axis.ticks = element_blank(),
                   axis.title = element_blank())
 
-        ggsave(sprintf("k_means_clustering_%s.pdf", unique(grouped_data$single_cell_data.Cell_type)))
+        ggsave(sprintf("figures/k_means_clustering_%s.pdf", unique(grouped_data$single_cell_data.Cell_type)))
     }
 
     write.csv(cluster_data, file = "cluster_data.csv", row.names = FALSE)
