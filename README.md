@@ -4,7 +4,7 @@
 This repository contains scripts for the project "Characterizing colorectal cancer subtypes at spatially-informed single-cell resolution"for BMI 212 course at Stanford University.
 The workflow includes exploratory data analysis, preprocessing, deep subtyping of single-cells based on their absolute developmental potential, single-cell deconvolution of spatial spots, analysis of spatially variable genes and enriched genesets, and identification of spatial signatures in distinct tumor regions. The corresponding scripts of all the steps can be found in this repository.
 
-<img width="1433" alt="image" src="https://github.com/Jake Chang/biods212_csms/assets/145698671/3113f091-ad38-438e-9caf-e61e587d5f34">
+<img width="1433" alt="image" src="./workflow.png">
 
 ### Scripts Description
 
